@@ -1,29 +1,63 @@
 import { useState } from "react";
+import { useDebouncedCallback } from "use-debounce";
+import { useQuery } from "@tanstack/react-query";
+
 import Modal from "../Modal/Modal";
 import NoteForm from "../NoteForm/NoteForm";
 import NoteList from "../NoteList/NoteList";
 import Pagination from "../Pagination/Pagination";
 import SearchBox from "../SearchBox/SearchBox";
-import noteService from "..//../services/noteService";
+import {
+  fetchNotes,
+  //createNote,
+  //deleteNote,
+} from "..//../services/noteService";
+//import { type Note } from "..//../types/note";
 
 import css from "./App.module.css";
 
 function App() {
-  //const [count, setCount] = useState(0);
+  const [page, setPage] = useState<number>(1);
+
+  const [search, setSearch] = useState<string>("");
+
+  const debouncedSetSearch = useDebouncedCallback((value: string) => {
+    setSearch(value);
+    setPage(1);
+  }, 500);
+
+  const { data, isLoading, isError } = useQuery({
+    // queryKey — це унікальний ідентифікатор запиту.
+    // Щоразу, коли змінюються page або search, TanStack Query автоматично перезапустить запит!
+    queryKey: ["notes", page, search],
+    // queryFn — функція, яка безпосередньо робить запит через Axios
+    queryFn: () => fetchNotes(page, search),
+  });
+
+  // Масив нотаток беремо з data (залежно від того, як сервер повертає: data.notes чи просто data)
+  const notes = data?.notes || data || [];
+
+  const totalPages = data?.totalPages || 1;
 
   return (
     <>
       <div className={css.app}>
         <header className={css.toolbar}>
-          {/* Компонент SearchBox */}
-          <SearchBox />
-          {/* Пагінація */}
-          <Pagination />
-          {/* Кнопка створення нотатки */}
+          <SearchBox value={search} onChange={debouncedSetSearch} />
+
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
+          )}
         </header>
 
         <main>
-          <NoteList />
+          {isLoading && <p>Loading notes...</p>}
+          {isError && <p>Something went wrong...</p>}
+          <NoteList notes={notes} />
         </main>
       </div>
 

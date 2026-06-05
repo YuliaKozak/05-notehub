@@ -1,7 +1,22 @@
-function SearchBox() {
-  //const [count, setCount] = useState(0);
+import css from "./SearchBox.module.css";
 
-  return <></>;
+interface SearchBoxProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+function SearchBox({ value, onChange }: SearchBoxProps) {
+  return (
+    <>
+      <input
+        className={css.input}
+        type="text"
+        placeholder="Search notes"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </>
+  );
 }
 
 export default SearchBox;
