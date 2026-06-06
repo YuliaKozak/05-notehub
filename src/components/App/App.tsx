@@ -1,17 +1,13 @@
 import { useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 
 import Modal from "../Modal/Modal";
 import NoteForm from "../NoteForm/NoteForm";
 import NoteList from "../NoteList/NoteList";
 import Pagination from "../Pagination/Pagination";
 import SearchBox from "../SearchBox/SearchBox";
-import {
-  fetchNotes,
-  createNote,
-  deleteNote,
-} from "..//../services/noteService";
+import { fetchNotes } from "..//../services/noteService";
 //import { type Note } from "..//../types/note";
 
 import css from "./App.module.css";
@@ -32,29 +28,14 @@ function App() {
     queryKey: ["notes", page, search],
     // queryFn — функція, яка безпосередньо робить запит через Axios
     queryFn: () => fetchNotes(page, search),
+    placeholderData: keepPreviousData,
   });
 
   // Масив нотаток беремо з data (залежно від того, як сервер повертає: data.notes чи просто data)
-  const notes = data?.notes || data || [];
 
   const totalPages = data?.totalPages || 1;
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const queryClient = useQueryClient();
-
-  const createMutation = useMutation({
-    mutationFn: createNote,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notes"] }); // Оновлює список на екрані
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteNote(id), // або просто deleteNote, якщо функція приймає id
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notes"] }); // Оновлюємо список на екрані
-    },
-  });
 
   return (
     <>
@@ -77,18 +58,14 @@ function App() {
         <main>
           {isLoading && <p>Loading notes...</p>}
           {isError && <p>Something went wrong...</p>}
-          <NoteList
-            notes={notes}
-            onDelete={(id) => deleteMutation.mutate(id)}
-          />
+          {data?.notes && data.notes.length > 0 && (
+            <NoteList notes={data.notes} />
+          )}
         </main>
       </div>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <NoteForm
-          onSubmit={(values) => createMutation.mutate(values)}
-          onClose={() => setIsModalOpen(false)}
-        />
+        <NoteForm onClose={() => setIsModalOpen(false)} />
       </Modal>
     </>
   );

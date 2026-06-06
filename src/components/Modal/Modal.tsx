@@ -13,6 +13,9 @@ function Modal({ isOpen, onClose, children }: ModalProps) {
   useEffect(() => {
     if (!isOpen) return;
 
+    // 1. Блокуємо прокрутку сторінки при відкритті модалки
+    document.body.style.overflow = "hidden";
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
@@ -20,7 +23,13 @@ function Modal({ isOpen, onClose, children }: ModalProps) {
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    // 2. Функція очищення (cleanup). Спрацює ТОДІ, коли модалка закриється
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      // Повертаємо прокрутку фону назад у початковий стан!
+      document.body.style.overflow = "";
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;

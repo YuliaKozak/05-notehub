@@ -1,20 +1,27 @@
 import { type Note } from "../../types/note";
 import css from "./NoteList.module.css";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { deleteNote } from "../../services/noteService";
+
 interface NoteListProps {
   notes: Note[];
-  onDelete: (id: string) => void;
 }
 
-function NoteList({ notes, onDelete }: NoteListProps) {
-  if (notes.length === 0) {
-    return null;
-  }
+function NoteList({ notes }: NoteListProps) {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: deleteNote, // функція з axios, яка приймає id і робить розрив на сервері
+    onSuccess: () => {
+      // Щойно сервер сказав "OK", змушуємо React Query оновити список нотаток
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+    },
+  });
 
   return (
     <>
       <ul className={css.list}>
-        {/* Перебираємо масив нотаток через .map() */}
         {notes.map((note) => (
           <li key={note.id} className={css.listItem}>
             <h2 className={css.title}>{note.title}</h2>
@@ -23,7 +30,10 @@ function NoteList({ notes, onDelete }: NoteListProps) {
               <span className={css.tag}>{note.tag}</span>
 
               {/* Кнопка на своєму законному місці, тут вона бачить конкретний note.id */}
-              <button className={css.button} onClick={() => onDelete(note.id)}>
+              <button
+                className={css.button}
+                onClick={() => mutation.mutate(note.id)}
+              >
                 Delete
               </button>
             </div>

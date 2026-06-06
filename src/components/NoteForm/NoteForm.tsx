@@ -1,10 +1,12 @@
 import css from "./NoteForm.module.css";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+// Імпортуємо функцію та її тип даних
+import { createNote, type CreateNoteData } from "../../services/noteService";
 
 interface NoteFormProps {
-  onSubmit: (values: { title: string; content: string; tag: string }) => void;
-  onClose: () => void; // щоб кнопка Cancel могла закрити модалку
+  onClose: () => void;
 }
 
 const NoteValidationSchema = Yup.object().shape({
@@ -21,8 +23,19 @@ const NoteValidationSchema = Yup.object().shape({
     .required("Виберіть тег"),
 });
 
-function NoteForm({ onSubmit, onClose }: NoteFormProps) {
-  const initialValues = {
+function NoteForm({ onClose }: NoteFormProps) {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: createNote,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      onClose();
+    },
+  });
+
+  // Об'єкт чітко відповідає інтерфейсу CreateNoteData
+  const initialValues: CreateNoteData = {
     title: "",
     content: "",
     tag: "Todo",
@@ -33,17 +46,19 @@ function NoteForm({ onSubmit, onClose }: NoteFormProps) {
       initialValues={initialValues}
       validationSchema={NoteValidationSchema}
       onSubmit={(values, { resetForm }) => {
-        onSubmit(values);
-        resetForm();
-        onClose(); // закриваємо модалку після успішного створення
+        // Передаємо значення і кажемо TypeScript, що це точно тип CreateNoteData
+        mutation.mutate(values, {
+          onSuccess: () => {
+            resetForm();
+          },
+        });
       }}
     >
-      {({ isValid, dirty, isSubmitting }) => (
+      {({ isValid, dirty }) => (
         <Form className={css.form}>
           <div className={css.formGroup}>
             <label htmlFor="title">Title</label>
             <Field id="title" type="text" name="title" className={css.input} />
-            {/* Вивід помилки всередині твого span */}
             <ErrorMessage name="title" component="span" className={css.error} />
           </div>
 
@@ -86,7 +101,7 @@ function NoteForm({ onSubmit, onClose }: NoteFormProps) {
             <button
               type="submit"
               className={css.submitButton}
-              disabled={!(isValid && dirty) || isSubmitting} // кнопка заблокована, якщо форма не валідна або відправляється
+              disabled={!(isValid && dirty) || mutation.isPending}
             >
               Create note
             </button>
