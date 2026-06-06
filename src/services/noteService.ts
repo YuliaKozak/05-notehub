@@ -2,9 +2,8 @@ import axios from "axios";
 import type { Note } from "../types/note";
 
 interface FetchNotesResponse {
-  notes: Note[]; // Масив нотаток, тут ми нарешті використовуємо твій імпортований тип Note
-  totalPages: number; // Скільки всього сторінок є на сервері
-  currentPage: number; // Поточна сторінка
+  notes: Note[];
+  totalPages: number;
 }
 
 export interface CreateNoteData {

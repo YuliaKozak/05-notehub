@@ -27,18 +27,8 @@ function Pagination({
     onPageChange(event.selected + 1);
   };
 
-  // Безпечно дістаємо дефолтний експорт без використання 'any'
-  // через перевірку наявності властивості в об'єкті
-  const Paginate =
-    typeof ReactPaginate === "object" &&
-    ReactPaginate !== null &&
-    "default" in ReactPaginate
-      ? ((ReactPaginate as Record<string, unknown>)
-          .default as typeof ReactPaginate)
-      : ReactPaginate;
-
   return (
-    <Paginate
+    <ReactPaginate
       forcePage={currentPage - 1}
       pageCount={totalPages}
       onPageChange={handlePageClick}
