@@ -3,7 +3,7 @@ import ReactPaginate from "react-paginate";
 
 interface PaginationProps {
   currentPage: number;
-  totalPages: number; // Бекенд має повертати загальну кількість сторінок
+  totalPages: number;
   onPageChange: (page: number) => void;
 }
 
@@ -13,31 +13,38 @@ function Pagination({
   onPageChange,
 }: PaginationProps) {
   const handlePageClick = (event: { selected: number }) => {
-    onPageChange(event.selected + 1); // Повертаємо React-стану нормальну сторінку (починаючи з 1)
+    onPageChange(event.selected + 1);
   };
 
+  // Безпечно дістаємо дефолтний експорт без використання 'any'
+  // через перевірку наявності властивості в об'єкті
+  const Paginate =
+    typeof ReactPaginate === "object" &&
+    ReactPaginate !== null &&
+    "default" in ReactPaginate
+      ? ((ReactPaginate as Record<string, unknown>)
+          .default as typeof ReactPaginate)
+      : ReactPaginate;
+
   return (
-    <>
-      <ReactPaginate
-        forcePage={currentPage - 1} // Синхронізуємо поточну сторінку
-        pageCount={totalPages} // Загальна кількість сторінок
-        onPageChange={handlePageClick}
-        previousLabel="<"
-        nextLabel=">"
-        breakLabel="..."
-        // Нижче підключаємо класи зі стилями (налаштуй під свій CSS-модуль)
-        containerClassName={css.paginationContainer}
-        pageClassName={css.pageItem}
-        pageLinkClassName={css.pageLink}
-        previousClassName={css.pageItem}
-        previousLinkClassName={css.pageLink}
-        nextClassName={css.pageItem}
-        nextLinkClassName={css.pageLink}
-        breakClassName={css.pageItem}
-        breakLinkClassName={css.pageLink}
-        activeClassName={css.activePage}
-      />
-    </>
+    <Paginate
+      forcePage={currentPage - 1}
+      pageCount={totalPages}
+      onPageChange={handlePageClick}
+      previousLabel="<"
+      nextLabel=">"
+      breakLabel="..."
+      containerClassName={css.pagination}
+      pageClassName={css.active}
+      pageLinkClassName=""
+      previousClassName=""
+      previousLinkClassName=""
+      nextClassName=""
+      nextLinkClassName=""
+      breakClassName=""
+      breakLinkClassName=""
+      activeClassName=""
+    />
   );
 }
 

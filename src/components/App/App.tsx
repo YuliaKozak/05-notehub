@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import Modal from "../Modal/Modal";
 import NoteForm from "../NoteForm/NoteForm";
@@ -9,8 +9,8 @@ import Pagination from "../Pagination/Pagination";
 import SearchBox from "../SearchBox/SearchBox";
 import {
   fetchNotes,
-  //createNote,
-  //deleteNote,
+  createNote,
+  deleteNote,
 } from "..//../services/noteService";
 //import { type Note } from "..//../types/note";
 
@@ -39,6 +39,23 @@ function App() {
 
   const totalPages = data?.totalPages || 1;
 
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const queryClient = useQueryClient();
+
+  const createMutation = useMutation({
+    mutationFn: createNote,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] }); // Оновлює список на екрані
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteNote(id), // або просто deleteNote, якщо функція приймає id
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] }); // Оновлюємо список на екрані
+    },
+  });
+
   return (
     <>
       <div className={css.app}>
@@ -52,17 +69,27 @@ function App() {
               onPageChange={setPage}
             />
           )}
+          <button className={css.button} onClick={() => setIsModalOpen(true)}>
+            Create note +
+          </button>
         </header>
 
         <main>
           {isLoading && <p>Loading notes...</p>}
           {isError && <p>Something went wrong...</p>}
-          <NoteList notes={notes} />
+          <NoteList
+            notes={notes}
+            onDelete={(id) => deleteMutation.mutate(id)}
+          />
         </main>
       </div>
 
-      <Modal />
-      <NoteForm />
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+        <NoteForm
+          onSubmit={(values) => createMutation.mutate(values)}
+          onClose={() => setIsModalOpen(false)}
+        />
+      </Modal>
     </>
   );
 }
